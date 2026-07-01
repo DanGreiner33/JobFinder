@@ -416,6 +416,78 @@
     progress.style.display='none'; inputCard.style.display='block';
   });
 })();
+  
+// ===== Auth gate: invite-only login (added) =====
+(function(){
+  var acss = document.createElement('style');
+  acss.textContent = '#authOverlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}'+
+    '#authOverlay .card{max-width:380px;width:100%}'+
+    '#authOverlay h2{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0 0 4px}'+
+    '#authOverlay p.sub{font-size:13.5px;color:var(--slate);margin:0 0 20px}'+
+    '#authOverlay .eyebrow{margin-bottom:6px}'+
+    '#authOverlay input{margin-bottom:12px}'+
+    '#authErr{color:var(--rose);font-size:13px;font-weight:500;margin-top:10px;display:none}'+
+    '#signoutBtn{position:fixed;top:16px;right:16px;z-index:50;background:#fff;border:1px solid var(--line);color:var(--slate);border-radius:9px;padding:7px 13px;font-weight:600;font-size:12.5px;cursor:pointer;font-family:var(--sans)}'+
+    '#signoutBtn:hover{border-color:var(--violet);color:var(--violet)}';
+  document.head.appendChild(acss);
+
+  var overlay = document.createElement('div');
+  overlay.id = 'authOverlay';
+  overlay.innerHTML = '<div class="card">'+
+    '<div class="eyebrow">FCP Intelligence</div>'+
+    '<h2>Sign in</h2>'+
+    '<p class="sub">This tool is private. Please sign in to continue.</p>'+
+    '<label>Email</label><input type="text" id="authEmail" placeholder="you@company.com">'+
+    '<label>Password</label><input type="password" id="authPass" placeholder="Your password">'+
+    '<button class="btn" id="authBtn">Sign in</button>'+
+    '<div id="authErr"></div>'+
+    '</div>';
+  document.body.appendChild(overlay);
+
+  var signout = document.createElement('button');
+  signout.id = 'signoutBtn';
+  signout.textContent = 'Sign out';
+  signout.style.display = 'none';
+  document.body.appendChild(signout);
+
+  var wrapEl = document.querySelector('.wrap');
+
+  function showApp(){
+    overlay.style.display = 'none';
+    if(wrapEl) wrapEl.style.display = 'block';
+    signout.style.display = 'block';
+  }
+  function showLogin(){
+    overlay.style.display = 'flex';
+    if(wrapEl) wrapEl.style.display = 'none';
+    signout.style.display = 'none';
+  }
+
+  async function doLogin(){
+    var email = document.getElementById('authEmail').value.trim();
+    var pass = document.getElementById('authPass').value;
+    var errEl = document.getElementById('authErr');
+    errEl.style.display = 'none';
+    if(!email || !pass){ errEl.textContent='Enter your email and password.'; errEl.style.display='block'; return; }
+    var btn = document.getElementById('authBtn');
+    btn.disabled = true; btn.textContent = 'Signing in\u2026';
+    var res = await sb.auth.signInWithPassword({ email: email, password: pass });
+    btn.disabled = false; btn.textContent = 'Sign in';
+    if(res.error){ errEl.textContent = res.error.message || 'Sign in failed.'; errEl.style.display='block'; return; }
+    showApp();
+  }
+
+  document.getElementById('authBtn').addEventListener('click', doLogin);
+  document.getElementById('authPass').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  signout.addEventListener('click', async function(){ await sb.auth.signOut(); showLogin(); });
+
+  // Gate on load
+  showLogin();
+  sb.auth.getSession().then(function(r){
+    if(r && r.data && r.data.session){ showApp(); }
+  });
+})();
+
 
 </script>
 </body>
