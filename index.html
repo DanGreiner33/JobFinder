@@ -344,6 +344,79 @@
     result.innerHTML = html;
     wireAgain();
   }
+  
+// ===== Past searches history tab (added) =====
+(function(){
+  var css = document.createElement('style');
+  css.textContent = '.tabs{display:flex;gap:8px;margin-bottom:18px}'+
+    '.tabbtn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 14px;font-weight:600;font-size:13px;color:var(--slate);cursor:pointer;font-family:var(--sans)}'+
+    '.tabbtn.active{border-color:var(--violet);color:var(--violet);background:var(--violet-soft)}'+
+    '.histitem{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer}'+
+    '.histitem:hover{border-color:var(--violet)}'+
+    '.histitem .co{font-weight:700;font-size:15px}'+
+    '.histitem .meta{font-size:12px;color:var(--mute);margin-top:3px}';
+  document.head.appendChild(css);
+
+  var wrap = document.querySelector('.wrap');
+  var tabs = document.createElement('div');
+  tabs.className = 'tabs';
+  tabs.innerHTML = '<button class="tabbtn active" id="tabSearch">New search</button>'+
+    '<button class="tabbtn" id="tabHistory">Past searches</button>';
+  var historyView = document.createElement('div');
+  historyView.id = 'historyView';
+  historyView.style.display = 'none';
+  wrap.insertBefore(tabs, inputCard);
+  wrap.insertBefore(historyView, inputCard);
+
+  function topPick(res){
+    if(!res) return 'No confident match';
+    if(res.top_pick) return res.top_pick;
+    if(res.candidates && res.candidates[0] && res.candidates[0].company) return res.candidates[0].company;
+    return 'No confident match';
+  }
+
+  async function loadHistory(){
+    historyView.innerHTML = '<p style="color:var(--mute);font-size:13px">Loading\u2026</p>';
+    var q = await sb.from('posting_queue')
+      .select('id,url,description,status,result,created_at')
+      .eq('status','done')
+      .order('created_at',{ascending:false});
+    if(q.error){ historyView.innerHTML = '<div class="state bad">Couldn\u2019t load history.</div>'; return; }
+    var rows = q.data || [];
+    if(!rows.length){ historyView.innerHTML = '<p style="color:var(--mute);font-size:13px">No past searches yet.</p>'; return; }
+    historyView.innerHTML = rows.map(function(r){
+      var co = esc(topPick(r.result));
+      var when = new Date(r.created_at).toLocaleString();
+      var raw = (r.description || r.url || '');
+      var snip = esc(raw.slice(0,90)) + (raw.length>90?'\u2026':'');
+      return '<div class="histitem" data-id="'+r.id+'"><div class="co">'+co+'</div>'+
+             '<div class="meta">'+when+' \u00b7 '+snip+'</div></div>';
+    }).join('');
+    var items = historyView.querySelectorAll('.histitem');
+    items.forEach(function(el){
+      el.addEventListener('click', function(){
+        var row = rows.find(function(d){ return d.id === el.dataset.id; });
+        historyView.style.display = 'none';
+        inputCard.style.display = 'none';
+        finish();
+        render((row && row.result) || {});
+      });
+    });
+  }
+
+  $('tabHistory').addEventListener('click', function(){
+    $('tabHistory').classList.add('active'); $('tabSearch').classList.remove('active');
+    inputCard.style.display='none'; progress.style.display='none';
+    result.style.display='none'; historyView.style.display='block';
+    loadHistory();
+  });
+  $('tabSearch').addEventListener('click', function(){
+    $('tabSearch').classList.add('active'); $('tabHistory').classList.remove('active');
+    historyView.style.display='none'; result.style.display='none';
+    progress.style.display='none'; inputCard.style.display='block';
+  });
+})();
+
 </script>
 </body>
 </html>
