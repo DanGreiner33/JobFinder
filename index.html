@@ -487,6 +487,55 @@
     if(r && r.data && r.data.session){ showApp(); }
   });
 })();
+  
+// ===== Risk mitigation & alternatives framing (added) =====
+(function(){
+  var DISCLAIMER = 'AI-generated estimate. This is the most likely employer based on public data, which can be outdated or incomplete \u2014 always verify independently before acting. Attorneys who leave a firm to start their own practice are frequently still listed under the old firm in third-party directories.';
+  var rcss = document.createElement('style');
+  rcss.textContent = '.verify{background:var(--amber-soft);border:1px solid #fcd34d;border-radius:12px;padding:13px 16px;margin-top:14px;font-size:12.5px;color:#92400e;line-height:1.5}'+
+    '.verify b{color:#78350f}'+
+    '.reveal .estnote{color:var(--panel-mute);font-size:12px;margin-top:10px;font-style:italic}'+
+    '.cands h3 .altsub{display:block;text-transform:none;letter-spacing:0;font-weight:500;font-size:12px;color:var(--mute);margin-top:4px}';
+  document.head.appendChild(rcss);
+
+  function enhance(){
+    var res = document.getElementById('result');
+    if(!res) return;
+    // only enhance a real ranked result (has a reveal panel)
+    var reveal = res.querySelector('.reveal');
+    if(reveal && !reveal.querySelector('.estnote')){
+      var lbl = reveal.querySelector('.label');
+      if(lbl) lbl.textContent = 'Most likely employer (estimate)';
+      var note = document.createElement('div');
+      note.className = 'estnote';
+      note.textContent = 'Best available match \u2014 not a confirmation. Review the alternatives below.';
+      reveal.appendChild(note);
+    }
+    // verification banner right after the reveal panel
+    if(reveal && !res.querySelector('.verify')){
+      var v = document.createElement('div');
+      v.className = 'verify';
+      v.innerHTML = '<b>Verify before acting.</b> ' + DISCLAIMER;
+      reveal.parentNode.insertBefore(v, reveal.nextSibling);
+    }
+    // reframe the candidates heading to emphasise alternatives
+    var h3 = res.querySelector('.cands h3');
+    if(h3 && !h3.querySelector('.altsub')){
+      h3.firstChild && (h3.firstChild.textContent = 'Other possible employers');
+      var sub = document.createElement('span');
+      sub.className = 'altsub';
+      sub.textContent = 'Ranked by likelihood. Consider these alternatives if the top pick looks wrong.';
+      h3.appendChild(sub);
+    }
+  }
+
+  // observe the result container so we enhance every time a result renders
+  var target = document.getElementById('result');
+  if(target){
+    var mo = new MutationObserver(function(){ enhance(); });
+    mo.observe(target, { childList:true, subtree:true });
+  }
+})();
 
 
 </script>
