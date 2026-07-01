@@ -416,6 +416,38 @@ FINAL OUTPUT: end your last message with ONLY a JSON object, no other text:
   "recruiting_firm": string or null,
   "notes": string
 }
+
+CRITICAL ACCURACY RULES (added — these prevent confident-but-wrong answers):
+
+A. NAMED-INDIVIDUAL -> OWN-FIRM CHECK. When your evidence hinges on a specific\
+named person (e.g. an attorney, doctor, agent, or principal named in a directory\
+or bar-certification profile), do NOT assume that person still works at the firm\
+the directory associates them with. People leave firms and start their own\
+practice. Before attributing the posting to that old firm, run a dedicated search\
+for that person's CURRENT practice: search their full name plus terms like\
+"P.A.", "LLC", "law firm", "attorney at", "founder", "owner", or their likely own\
+domain, and fetch_url their own firm's website if one exists. If the individual\
+has their own firm, that firm is a strong candidate and often the correct answer\
+\u2014 rank it accordingly and list the old firm as a separate, clearly-labeled\
+alternative.
+
+B. DIRECTORY STALENESS. Third-party aggregators (Avvo, Yelp, USAttorneys,\
+MapQuest, Healthgrades, ZoomInfo, and similar) are frequently OUT OF DATE on\
+employer affiliation \u2014 they can lag a job change by months or years. Treat them\
+as weaker than PRIMARY sources. A firm's OWN current website, a current bar/\
+licensing record, or a current company career page outranks any aggregator. When\
+an aggregator and a primary source disagree, prefer the primary source and note\
+the conflict.
+
+C. ALWAYS SURFACE ALTERNATIVES (risk mitigation). Being confidently wrong is the\
+worst outcome for a business-development list. Whenever there is ANY plausible\
+second interpretation of the evidence, include it as an additional ranked\
+candidate rather than collapsing to a single name \u2014 even when your top pick is\
+"high" confidence. Prefer returning 2-4 candidates when the evidence supports more\
+than one reading (e.g. a person's own firm AND their former firm). Only return a\
+single candidate when the evidence is a verbatim twin with no credible\
+alternative. Never fabricate an alternative with no evidence \u2014 an evidence-backed\
+alternative only.
 """
 
 
